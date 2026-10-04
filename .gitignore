@@ -1,0 +1,4 @@
+# Datos personales de clientes: NO se suben al repo publico
+data.json
+*.xlsx
+~$*

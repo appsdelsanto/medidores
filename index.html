@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Medidores">
+<meta name="theme-color" content="#0d1117">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Consulta de Medidores — Caborca</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--green:#3fb950;--green-dim:#1a3d22;--blue:#58a6ff;--blue-dim:#0d2145;--text:#e6edf3;--text-muted:#8b949e;--text-dim:#484f58;--accent:#f0883e;--red:#f85149;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-tap-highlight-color:transparent;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
+.header-icon{width:30px;height:30px;background:var(--green-dim);border:1px solid var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.htitle{display:flex;flex-direction:column;line-height:1.25;}
+header h1{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em;}
+.hver{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.05em;}
+.header-sub{font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-left:auto;text-align:right;white-space:nowrap;}
+
+/* INPUT SCREEN */
+.input-screen{padding:24px 18px;max-width:560px;margin:0 auto;}
+.input-label{font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.input-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.mode-toggle{display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;}
+.mode-btn{flex:1;background:transparent;border:none;color:var(--text-muted);font-family:var(--mono);font-size:11px;padding:9px;border-radius:6px;cursor:pointer;letter-spacing:.05em;transition:all .15s;}
+.mode-btn.active{background:var(--green-dim);color:var(--green);font-weight:600;}
+textarea#rpuInput{width:100%;min-height:180px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:13px;padding:14px;outline:none;resize:vertical;line-height:1.6;}
+textarea#rpuInput:focus{border-color:var(--blue);}
+textarea#rpuInput::placeholder{color:var(--text-dim);}
+.btn-primary{width:100%;background:var(--green-dim);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:13px;font-weight:600;padding:14px;border-radius:10px;margin-top:14px;cursor:pointer;letter-spacing:.05em;transition:all .15s;}
+.btn-primary:active{background:#2a5a2a;}
+.btn-primary:disabled{opacity:.4;}
+.input-hint{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:10px;line-height:1.5;}
+.data-status{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;padding:10px;letter-spacing:.05em;}
+.data-status.ready{color:var(--green);}
+
+/* RESULTS SUMMARY */
+.summary{padding:16px 18px;border-bottom:1px solid var(--border);background:var(--surface);}
+.summary-row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;margin-bottom:6px;}
+.summary-row:last-child{margin-bottom:0;}
+.summary-ok{color:var(--green);}
+.summary-bad{color:var(--red);}
+.summary-list{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-left:20px;word-break:break-all;}
+.back-to-input{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:6px;margin-top:10px;cursor:pointer;}
+
+/* LAYOUT (results) */
+.layout{display:flex;min-height:calc(100vh - 54px);}
+.sidebar{width:290px;min-width:290px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.search-box{padding:12px;border-bottom:1px solid var(--border);position:relative;}
+.search-box input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px 8px 32px;outline:none;}
+.search-box input:focus{border-color:var(--blue);}
+.search-box input::placeholder{color:var(--text-dim);}
+.search-icon{position:absolute;left:22px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;pointer-events:none;}
+.meter-count{padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--text-dim);border-bottom:1px solid var(--border);letter-spacing:.05em;}
+.meter-list{overflow-y:auto;flex:1;}
+.meter-item{padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;}
+.meter-item:hover{background:var(--surface2);}
+.meter-item.active{background:var(--blue-dim);border-left:2px solid var(--blue);}
+.meter-item.hidden{display:none;}
+.mi-rpu{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.05em;margin-bottom:2px;}
+.meter-item.active .mi-rpu{color:var(--text-muted);}
+.mi-code{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--blue);letter-spacing:.05em;}
+.meter-item.active .mi-code{color:var(--text);}
+.mi-cliente{font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mi-meta{display:flex;gap:6px;margin-top:5px;}
+.tag{font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:3px;letter-spacing:.05em;font-weight:500;}
+.tag-codigo{background:#1c2d1c;color:var(--green);border:1px solid #2a4a2a;}
+.tag-tarifa{background:#1c1c2d;color:#a5a5f0;border:1px solid #2a2a4a;}
+.detail{flex:1;overflow-y:auto;background:var(--bg);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-dim);padding:40px 20px;text-align:center;}
+.empty-icon{font-size:40px;opacity:.4;}
+.empty-state p{font-family:var(--mono);font-size:12px;letter-spacing:.05em;}
+.detail-panel{animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.detail-header{padding:18px 24px 14px;border-bottom:1px solid var(--border);background:var(--surface);}
+.dh-rpu{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:.08em;margin-bottom:4px;}
+.dh-medidor{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:.1em;}
+.dh-cliente{font-size:13px;color:var(--text-muted);margin-top:3px;}
+.dh-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.dh-tag{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;letter-spacing:.05em;}
+.dh-tag-green{background:var(--green-dim);color:var(--green);border:1px solid #2a5a2a;}
+.dh-tag-blue{background:var(--blue-dim);color:var(--blue);border:1px solid #1a3a6a;}
+.dh-tag-orange{background:#2a1a0a;color:var(--accent);border:1px solid #4a2a0a;}
+.dh-tag-rpu{background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);}
+.table-wrap{padding:18px 24px;}
+.section-label{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:8px;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:640px;}
+thead th{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;padding:9px 10px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface);}
+tbody tr.row-principal{background:var(--green-dim);}
+tbody td{padding:9px 10px;color:var(--text-muted);vertical-align:top;line-height:1.4;}
+tbody tr.row-principal td{color:var(--text);}
+.cell-medidor{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--text)!important;letter-spacing:.05em;white-space:nowrap;}
+.cell-rpu{font-family:var(--mono);font-size:10px;color:var(--text-dim)!important;white-space:nowrap;}
+tbody tr.row-principal .cell-rpu{color:var(--text-muted)!important;}
+.num-col{color:var(--text-dim);font-family:var(--mono);font-size:10px;text-align:center;width:26px;}
+tbody tr.row-principal .num-col{color:var(--green)!important;font-weight:600;}
+.badge-p{display:inline-flex;align-items:center;background:var(--green);color:#0d1117;font-family:var(--mono);font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px;letter-spacing:.05em;margin-left:6px;vertical-align:middle;}
+.map-link{display:inline-flex;align-items:center;gap:4px;color:var(--blue);text-decoration:none;font-family:var(--mono);font-size:10px;padding:3px 7px;border:1px solid var(--blue-dim);border-radius:4px;background:var(--blue-dim);white-space:nowrap;}
+.no-gps{font-family:var(--mono);font-size:10px;color:var(--text-dim);}
+@media(max-width:640px){
+  .layout{flex-direction:column;min-height:auto;}
+  .sidebar{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--border);}
+  .meter-list{max-height:40vh;}
+  .detail{min-height:60vh;}
+  .table-wrap{padding:12px;}
+  .detail-header{padding:14px 16px 12px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">&#9889;</div>
+  <div class="htitle">
+    <h1>CONSULTA DE MEDIDORES</h1>
+    <span class="hver" id="dataInfo">cargando datos...</span>
+  </div>
+  <span class="header-sub" id="headerStatus"></span>
+</header>
+
+<!-- PANTALLA DE ENTRADA -->
+<div class="input-screen" id="inputScreen">
+  <div class="input-label">Buscar por</div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeRPU" onclick="setMode('rpu')">RPU</button>
+    <button class="mode-btn" id="modeMED" onclick="setMode('medidor')">MEDIDOR</button>
+  </div>
+  <textarea id="rpuInput" placeholder="Pega aquí los RPU o Medidores, uno por línea&#10;&#10;552190400517&#10;552070400351&#10;552080200709&#10;..."></textarea>
+  <button class="btn-primary" id="buscarBtn" onclick="ejecutarBusqueda()" disabled>Cargando base de datos...</button>
+  <div class="input-hint">La búsqueda es exacta e ignora mayúsculas/minúsculas y espacios. Por cada coincidencia se muestran 5 registros antes y 5 después, en el orden del archivo original.</div>
+  <div class="data-status" id="dataStatus">Preparando datos embebidos...</div>
+</div>
+
+<!-- PANTALLA DE RESULTADOS -->
+<div id="resultsScreen" style="display:none">
+  <div class="summary" id="summaryBox"></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="search-box"><span class="search-icon">&#128269;</span><input type="text" id="filterInput" placeholder="Filtrar resultados..." oninput="filterMeters()"></div>
+      <div class="meter-count" id="meterCount"></div>
+      <div class="meter-list" id="meterList"></div>
+    </aside>
+    <main class="detail" id="detailPanel">
+      <div class="empty-state" id="emptyState"><div class="empty-icon">&#128225;</div><p>Selecciona un medidor</p></div>
+    </main>
+  </div>
+</div>
+
+<script>
+// ---------- ESTADO GLOBAL ----------
+let DB = [];           // array de registros: [MEDIDOR, RPU, CLIENTE, DIR1, DIR2, DIR3, COLONIA, TARIFA, CODIGO, GPS]
+let searchMode = 'rpu'; // 'rpu' | 'medidor'
+let resultsData = [];   // resultados de la última búsqueda
+
+const COL = { MEDIDOR:0, RPU:1, CLIENTE:2, DIR1:3, DIR2:4, DIR3:5, COLONIA:6, TARIFA:7, CODIGO:8, GPS:9 };
+
+// ---------- CARGA DE DATOS ----------
+async function loadData(){
+  try {
+    const res = await fetch('data.json');
+    DB = await res.json();
+    document.getElementById('dataInfo').textContent = DB.length.toLocaleString('es-MX') + ' registros cargados';
+    document.getElementById('dataStatus').textContent = 'Listo — ' + DB.length.toLocaleString('es-MX') + ' registros disponibles sin conexión';
+    document.getElementById('dataStatus').classList.add('ready');
+    const btn = document.getElementById('buscarBtn');
+    btn.disabled = false;
+    btn.textContent = 'Buscar';
+  } catch(e) {
+    document.getElementById('dataStatus').textContent = 'Error cargando data.json: ' + e.message;
+  }
+}
+loadData();
+
+// ---------- MODO DE BUSQUEDA ----------
+function setMode(m){
+  searchMode = m;
+  document.getElementById('modeRPU').classList.toggle('active', m==='rpu');
+  document.getElementById('modeMED').classList.toggle('active', m==='medidor');
+}
+
+// ---------- EJECUTAR BUSQUEDA ----------
+function ejecutarBusqueda(){
+  const raw = document.getElementById('rpuInput').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  // Extraer solo tokens plausibles: RPU = 12 digitos; MEDIDOR = alfanumerico sin espacios
+  const queries = [];
+  const seen = new Set();
+  for (let line of lines){
+    let token = line;
+    if (searchMode === 'rpu'){
+      const m = line.match(/\d{10,13}/); // tolera pequenas variaciones de longitud
+      if (!m) continue;
+      token = m[0];
+    } else {
+      // quitar numeracion de lista tipo "1." "- " "* "
+      token = line.replace(/^[\d]+[\.\)]\s*/, '').replace(/^[-*]\s*/, '').trim();
+      if (!token || /^\d+$/.test(token) && token.length < 4) continue; // descarta "2", "4" sueltos
+    }
+    const key = token.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    queries.push(token);
+  }
+
+  const colIdx = searchMode === 'rpu' ? COL.RPU : COL.MEDIDOR;
+
+  // Indexar DB una vez para busqueda rapida
+  const index = {};
+  DB.forEach((rec, i) => {
+    const key = (rec[colIdx] || '').trim().toUpperCase();
+    if (key && !(key in index)) index[key] = i;
+  });
+
+  const found = [];
+  const notFound = [];
+
+  for (const q of queries){
+    const key = q.trim().toUpperCase();
+    if (key in index){
+      const idx = index[key];
+      const start = Math.max(0, idx - 5);
+      const end = Math.min(DB.length - 1, idx + 5);
+      const rows = [];
+      for (let i = start; i <= end; i++){
+        const rec = DB[i];
+        const gps = (rec[COL.GPS] || '').trim();
+        let mapsUrl = '';
+        if (gps.includes(',')){
+          const parts = gps.split(',');
+          if (parts.length >= 2 && parts[0].trim() && parts[1].trim()){
+            mapsUrl = 'https://www.google.com/maps?q=' + parts[0].trim() + ',' + parts[1].trim();
+          }
+        }
+        const dirParts = [rec[COL.DIR1], rec[COL.DIR2], rec[COL.DIR3]].map(d => (d||'').trim()).filter(d => d.length > 0);
+        rows.push({
+          medidor: rec[COL.MEDIDOR] || '',
+          rpu: rec[COL.RPU] || '',
+          codigo: rec[COL.CODIGO] || '',
+          tarifa: rec[COL.TARIFA] || '',
+          cliente: rec[COL.CLIENTE] || '',
+          direccion: dirParts.join(' | '),
+          colonia: rec[COL.COLONIA] || '',
+          mapsUrl: mapsUrl,
+          esPrincipal: i === idx
+        });
+      }
+      const principal = rows.find(r => r.esPrincipal);
+      found.push({ query: q, medidor: principal.medidor, rpu: principal.rpu, codigo: principal.codigo, cliente: principal.cliente, rows: rows });
+    } else {
+      notFound.push(q);
+    }
+  }
+
+  resultsData = found;
+  renderResults(found, notFound);
+}
+
+// ---------- RENDER RESULTADOS ----------
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderResults(found, notFound){
+  document.getElementById('inputScreen').style.display = 'none';
+  document.getElementById('resultsScreen').style.display = 'block';
+
+  let summaryHtml = '<div class="summary-row summary-ok">&#9989; Encontrados: ' + found.length + '</div>';
+  if (notFound.length > 0){
+    summaryHtml += '<div class="summary-row summary-bad">&#10060; No encontrados: ' + notFound.length + '</div>';
+    summaryHtml += '<div class="summary-list">' + notFound.map(esc).join(', ') + '</div>';
+  }
+  summaryHtml += '<button class="back-to-input" onclick="volverEntrada()">&#8592; Nueva busqueda</button>';
+  document.getElementById('summaryBox').innerHTML = summaryHtml;
+
+  // sidebar
+  let sidebarHtml = '';
+  found.forEach((d, i) => {
+    const p = d.rows.find(r => r.esPrincipal);
+    const searchKey = (p.medidor + ' ' + p.cliente + ' ' + d.rpu).toLowerCase();
+    sidebarHtml += `<div class="meter-item" data-index="${i}" data-search="${esc(searchKey)}" onclick="showDetail(${i})">
+      <div class="mi-rpu">${esc(d.rpu)}</div>
+      <div class="mi-code">${esc(p.medidor)}</div>
+      <div class="mi-cliente">${esc(p.cliente)}</div>
+      <div class="mi-meta"><span class="tag tag-codigo">${esc(p.codigo)}</span><span class="tag tag-tarifa">T-${esc(p.tarifa)}</span></div>
+    </div>`;
+  });
+  document.getElementById('meterList').innerHTML = sidebarHtml;
+  document.getElementById('meterCount').textContent = found.length + ' MEDIDORES';
+
+  // paneles de detalle
+  let panelsHtml = '';
+  found.forEach((d, i) => {
+    const p = d.rows.find(r => r.esPrincipal);
+    let rowsHtml = '';
+    d.rows.forEach((r, n) => {
+      const badge = r.esPrincipal ? ' <span class="badge-p">PRINCIPAL</span>' : '';
+      const mc = r.mapsUrl ? `<a class="map-link" href="${esc(r.mapsUrl)}" target="_blank">&#128205; Ver mapa</a>` : '<span class="no-gps">&mdash;</span>';
+      const rc = r.esPrincipal ? ' class="row-principal"' : '';
+      rowsHtml += `<tr${rc}><td class="num-col">${n+1}</td><td class="cell-medidor">${esc(r.medidor)}${badge}</td><td class="cell-rpu">${esc(r.rpu)}</td><td>${esc(r.codigo)}</td><td>${esc(r.tarifa)}</td><td>${esc(r.cliente)}</td><td>${esc(r.direccion) || '&mdash;'}</td><td>${mc}</td></tr>`;
+    });
+    const colTag = p.colonia ? `<span class="dh-tag dh-tag-orange">${esc(p.colonia)}</span>` : '';
+    panelsHtml += `<div id="panel-${i}" class="detail-panel" style="display:none">
+      <div class="detail-header">
+        <div class="dh-rpu">${esc(d.rpu)}</div>
+        <div class="dh-medidor">${esc(p.medidor)}</div>
+        <div class="dh-cliente">${esc(p.cliente)}</div>
+        <div class="dh-tags">
+          <span class="dh-tag dh-tag-green">CODIGO ${esc(p.codigo)}</span>
+          <span class="dh-tag dh-tag-blue">TARIFA ${esc(p.tarifa)}</span>
+          <span class="dh-tag dh-tag-rpu">RPU ${esc(d.rpu)}</span>
+          ${colTag}
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="section-label">Registros de ruta (${d.rows.length} puntos)</div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>#</th><th>Medidor</th><th>RPU</th><th>Codigo</th><th>Tarifa</th><th>Cliente</th><th>Direccion</th><th>Mapa</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('detailPanel').innerHTML = '<div class="empty-state" id="emptyState"><div class="empty-icon">&#128225;</div><p>Selecciona un medidor</p></div>' + panelsHtml;
+}
+
+function filterMeters(){
+  const q = document.getElementById('filterInput').value.toLowerCase().trim();
+  let visible = 0;
+  document.querySelectorAll('.meter-item').forEach(el => {
+    const match = !q || el.dataset.search.includes(q);
+    el.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  document.getElementById('meterCount').textContent = visible + ' MEDIDOR' + (visible !== 1 ? 'ES' : '');
+}
+
+function showDetail(i){
+  document.querySelectorAll('.meter-item').forEach((el, j) => el.classList.toggle('active', j === i));
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.style.display = 'none';
+  document.querySelectorAll('.detail-panel').forEach((p, j) => { p.style.display = j === i ? 'block' : 'none'; });
+  if (window.innerWidth <= 640){
+    document.getElementById('detailPanel').scrollIntoView({behavior:'smooth'});
+  }
+}
+
+function volverEntrada(){
+  document.getElementById('resultsScreen').style.display = 'none';
+  document.getElementById('inputScreen').style.display = 'block';
+}
+
+// Registrar service worker para uso offline
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
