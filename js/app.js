@@ -1,7 +1,7 @@
 'use strict';
 // Version del CODIGO de la app. Subirla solo cuando cambia comportamiento/diseno,
 // nunca por cambios de datos (los datos viven en el telefono). Debe coincidir con sw.js.
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.0.1';
 
 // Registro guardado: [MEDIDOR, RPU, CLIENTE, DIR1, DIR2, DIR3, COLONIA, TARIFA, CODIGO, LAT, LON, CUENTA, HILOS]
 const C = { MED:0, RPU:1, CLI:2, D1:3, D2:4, D3:5, COL:6, TAR:7, COD:8, LAT:9, LON:10, CTA:11, HIL:12 };
