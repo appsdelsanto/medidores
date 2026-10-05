@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Medidores",
   "short_name": "Medidores",
   "description": "Consulta de medidores por RPU, medidor, nombre o dirección, con vecinos de ruta y mapa",
