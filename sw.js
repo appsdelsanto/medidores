@@ -1,6 +1,6 @@
 // Cache del CODIGO de la app. Los datos de medidores NO pasan por aqui (viven en IndexedDB).
 // Al publicar cambios de codigo: subir APP_VERSION aqui y en js/app.js.
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '2.0.2';
 const CACHE = 'medidores-app-' + APP_VERSION;
 const ASSETS = [
   './', './index.html', './manifest.json',
